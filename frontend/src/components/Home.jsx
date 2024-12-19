@@ -8,6 +8,7 @@ const Home = () => {
     const [currentPlayingIndex, setCurrentPlayingIndex] = useState(null); // Track currently playing audio
     const [currentTime, setCurrentTime] = useState(0); // Track playback time
     const [duration, setDuration] = useState(0); // Track total duration
+    const [links, setLinks] = useState([]);
     const audioRefs = useRef({}); // Store audio element references
 
     // Fetch audio files from the API
@@ -15,11 +16,22 @@ const Home = () => {
         axios
             .get("http://127.0.0.1:8000/api/audio-files/")
             .then((response) => {
-                setAudioFiles(response.data);
+                setAudioFiles(response.data.audio_files || []); // Ensure an array
+                setLinks(response.data.music_links || []);     // Ensure an array
             })
             .catch((error) => {
-                console.error("Error fetching audio files:", error);
+                console.error("Error fetching data:", error);
+                setAudioFiles([]); // Fallback to empty array
+                setLinks([]);      // Fallback to empty array
             });
+    }, []);
+
+    useEffect(() => {
+        axios
+            .get("http://127.0.0.1:8000/api/links/") // Replace with your actual endpoint
+            .then((response) => setLinks(response.data))
+            .catch((error) => console.error("Error fetching links:", error));
+
     }, []);
 
     // Function to toggle audio playback
@@ -54,9 +66,14 @@ const Home = () => {
     return (
         
         <div className='container'>
+            <div>
+
+
+            </div>
             <h1 className="h1">Musics direct Click</h1>
             {audioFiles.map((audio, index) => (
                 <div
+                className="audio-card"
                     key={index}
                     style={{
                         backgroundColor: "white",
@@ -70,6 +87,7 @@ const Home = () => {
                         borderRadius: "10px",
                         overflow: "hidden",
                         transition: "box-shadow 1s",
+                        
                     }}
                 >
                     <h2 className="h2">{audio.title}</h2>
@@ -98,6 +116,26 @@ const Home = () => {
                     <audio ref={(el) => (audioRefs.current[index] = el)} style={{ display: "none" }} />
                 </div>
             ))}
+            
+
+            {/* New Section: Music Links */}
+            <h1 className="h1">Music with Links</h1>
+            <div className="link-container">
+                {links.map((link, index) => (
+                    <div key={index} className="link-card">
+                        <img
+                            src={link.cover_image || "default_cover.png"}
+                            alt={link.name}
+                            className="link-image"
+                        />
+                        <h3 className="link-title">{link.name}</h3>
+                        <p className="link-description">{link.description}</p>
+                        <a href={link.url} target="_blank" rel="noopener noreferrer" className="link-button">
+                            Visit
+                        </a>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };
